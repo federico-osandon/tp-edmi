@@ -1,42 +1,82 @@
 import { defineStore } from 'pinia'
+import type { Database } from '../types/database.types'
 
 export const useAuthStore = defineStore('auth', () => {
-    const user = ref<any>(null)
-    const supabase = useSupabase()
+    const user = useSupabaseUser()
+    const supabase = useSupabaseClient<Database>()
     const router = useRouter()
 
-    const fetchUser = async () => {
-        const { data } = await supabase.auth.getUser()
-        user.value = data.user
+    // Custom user state to include role from profiles table
+    const userProfile = ref<any>(null)
+
+    const fetchProfile = async () => {
+        if (!user.value) {
+            userProfile.value = null
+            return
+        }
+        const { data } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.value.id)
+            .single()
+
+        userProfile.value = data
     }
 
-    const signUp = async (credentials: any) => {
-        const { data, error } = await supabase.auth.signUp(credentials)
+    // Watch for auth changes to fetch profile
+    watch(user, async (newUser) => {
+        if (newUser) {
+            await fetchProfile()
+        } else {
+            userProfile.value = null
+        }
+    }, { immediate: true })
+
+    const signUp = async ({ email, password, role }: any) => {
+        // Removed metadata options to avoid triggering potential legacy triggers
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password
+        })
         if (error) throw error
-        user.value = data.user
+
+        // Manually insert or update profiles (upsert) to handle cases where a trigger might have already created the row
+        if (data.user && data.user.email) {
+            const { error: profileError } = await supabase.from('profiles').upsert({
+                id: data.user.id,
+                email: data.user.email,
+                role: role as 'student' | 'instructor'
+            }, { onConflict: 'id' })
+
+            if (profileError) {
+                console.error('Error updating profile:', profileError)
+            }
+        }
+
         router.push('/')
     }
 
-    const signIn = async (credentials: any) => {
-        const { data, error } = await supabase.auth.signInWithPassword(credentials)
+    const signIn = async ({ email, password }: any) => {
+        const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        })
         if (error) throw error
-        user.value = data.user
         router.push('/')
     }
 
     const signOut = async () => {
         await supabase.auth.signOut()
-        user.value = null
         router.push('/login')
     }
 
     const isAuthenticated = computed(() => !!user.value)
-    const isInstructor = computed(() => user.value?.role === 'instructor')
-    const isStudent = computed(() => user.value?.role === 'student')
+    const isInstructor = computed(() => userProfile.value?.role === 'instructor')
+    const isStudent = computed(() => userProfile.value?.role === 'student')
 
     return {
         user,
-        fetchUser,
+        userProfile,
         signUp,
         signIn,
         signOut,

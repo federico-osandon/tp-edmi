@@ -50,7 +50,7 @@ const toggleMenu = () => {
               <div class="flex items-center gap-4">
                 <div class="flex flex-col items-end">
                   <span class="text-sm font-medium text-gray-900">{{ authStore.user?.email }}</span>
-                  <span class="text-xs text-gray-500 capitalize bg-gray-100 px-2 py-0.5 rounded-full">{{ authStore.user?.role }}</span>
+                  <span class="text-xs text-gray-500 capitalize bg-gray-100 px-2 py-0.5 rounded-full">{{ authStore.userProfile?.role }}</span>
                 </div>
                 <button 
                   @click="handleLogout"
@@ -114,7 +114,7 @@ const toggleMenu = () => {
               </div>
               <div class="ml-3">
                 <div class="text-base font-medium text-gray-800">{{ authStore.user?.email }}</div>
-                <div class="text-sm font-medium text-gray-500 capitalize">{{ authStore.user?.role }}</div>
+                <div class="text-sm font-medium text-gray-500 capitalize">{{ authStore.userProfile?.role }}</div>
               </div>
             </div>
             <div class="mt-3 space-y-1">
