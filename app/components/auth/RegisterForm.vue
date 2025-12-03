@@ -4,9 +4,10 @@ import Input from '~/components/ui/Input.vue'
 
 const authStore = useAuthStore()
 const form = ref({
+  first_name: '',
+  last_name: '',
   email: '',
-  password: '',
-  role: 'student' as 'student' | 'instructor'
+  password: ''
 })
 const error = ref('')
 const loading = ref(false)
@@ -18,7 +19,8 @@ const handleRegister = async () => {
     await authStore.signUp({
       email: form.value.email,
       password: form.value.password,
-      role: form.value.role
+      first_name: form.value.first_name,
+      last_name: form.value.last_name
     })
   } catch (e: any) {
     error.value = e.message || 'Ocurrió un error al registrarse'
@@ -33,6 +35,23 @@ const handleRegister = async () => {
     <div v-if="error" class="bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-center gap-2">
       <span class="block w-1.5 h-1.5 bg-red-600 rounded-full"></span>
       {{ error }}
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <Input
+        v-model="form.first_name"
+        label="Nombre"
+        type="text"
+        required
+        placeholder="Juan"
+      />
+      <Input
+        v-model="form.last_name"
+        label="Apellido"
+        type="text"
+        required
+        placeholder="Pérez"
+      />
     </div>
 
     <Input
@@ -51,25 +70,7 @@ const handleRegister = async () => {
       placeholder="••••••••"
     />
 
-    <div>
-      <label class="block text-sm font-medium text-gray-700 mb-2">Soy un...</label>
-      <div class="grid grid-cols-2 gap-4">
-        <label 
-          class="cursor-pointer border rounded-lg p-3 text-center transition-all"
-          :class="[form.role === 'student' ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-500' : 'border-gray-200 hover:border-gray-300']"
-        >
-          <input type="radio" v-model="form.role" value="student" class="sr-only" />
-          <span class="font-medium">Estudiante</span>
-        </label>
-        <label 
-          class="cursor-pointer border rounded-lg p-3 text-center transition-all"
-          :class="[form.role === 'instructor' ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-500' : 'border-gray-200 hover:border-gray-300']"
-        >
-          <input type="radio" v-model="form.role" value="instructor" class="sr-only" />
-          <span class="font-medium">Instructor</span>
-        </label>
-      </div>
-    </div>
+    <!-- Role selection removed: Default is student -->
 
     <Button
       type="submit"

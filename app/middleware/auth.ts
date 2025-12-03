@@ -1,13 +1,16 @@
-export default defineNuxtRouteMiddleware((to) => {
-    const user = useSupabaseUser()
+export default defineNuxtRouteMiddleware(async (to) => {
+    const supabase = useSupabaseClient()
+
+    // Get session from server-side (more reliable than useSupabaseUser)
+    const { data: { session } } = await supabase.auth.getSession()
 
     // If user is not logged in and trying to access a protected route
-    if (!user.value && to.path !== '/login' && to.path !== '/register') {
-        return navigateTo('/login')
+    if (!session && to.path !== '/login' && to.path !== '/register') {
+        return navigateTo('/login', { replace: true })
     }
 
     // If user is logged in and trying to access login/register
-    if (user.value && (to.path === '/login' || to.path === '/register')) {
-        return navigateTo('/')
+    if (session && (to.path === '/login' || to.path === '/register')) {
+        return navigateTo('/', { replace: true })
     }
 })

@@ -6,6 +6,7 @@ const dataStore = useDataStore()
 const router = useRouter()
 
 const showCreateModal = ref(false)
+const isLoading = ref(true)
 const newCourse = ref({
   name: '',
   code: '',
@@ -18,9 +19,12 @@ onMounted(async () => {
     return
   }
   await dataStore.fetchCourses()
+  isLoading.value = false
 })
 
 const handleCreateCourse = async () => {
+  if (!authStore.user) return
+  
   try {
     await dataStore.createCourse({
       ...newCourse.value,
@@ -41,7 +45,7 @@ const handleDeleteCourse = async (id: string) => {
 </script>
 
 <template>
-  <div>
+  <div v-if="!isLoading">
     <div class="flex justify-between items-center mb-8">
       <div>
         <h1 class="text-3xl font-bold text-gray-900">Courses</h1>

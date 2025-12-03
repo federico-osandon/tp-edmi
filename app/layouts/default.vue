@@ -43,6 +43,14 @@ const toggleMenu = () => {
               >
                 Courses
               </NuxtLink>
+              <NuxtLink 
+                v-if="authStore.isAuthenticated && authStore.userProfile?.role === 'superadmin'"
+                to="/admin/users" 
+                class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200"
+                :class="[$route.path.startsWith('/admin') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700']"
+              >
+                Admin
+              </NuxtLink>
             </div>
           </div>
           <div class="hidden sm:ml-6 sm:flex sm:items-center">
@@ -103,13 +111,22 @@ const toggleMenu = () => {
           >
             Courses
           </NuxtLink>
+          <NuxtLink 
+            v-if="authStore.isAuthenticated && authStore.userProfile?.role === 'superadmin'"
+            to="/admin/users" 
+            class="block pl-3 pr-4 py-2 border-l-4 text-base font-medium"
+            :class="[$route.path.startsWith('/admin') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700']"
+            @click="isMenuOpen = false"
+          >
+            Admin
+          </NuxtLink>
         </div>
         <div class="pt-4 pb-4 border-t border-gray-200">
           <template v-if="authStore.isAuthenticated">
             <div class="flex items-center px-4">
               <div class="flex-shrink-0">
                 <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-lg">
-                  {{ authStore.user?.email?.[0].toUpperCase() }}
+                  {{ (authStore.user?.email?.[0] ?? 'U').toUpperCase() }}
                 </div>
               </div>
               <div class="ml-3">

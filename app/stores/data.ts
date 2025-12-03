@@ -69,7 +69,7 @@ export const useDataStore = defineStore('data', () => {
             .from('submissions')
             .select(`
         *,
-        profiles:student_id (email)
+        users:student_id (email)
       `)
             .eq('assignment_id', assignmentId)
             .order('submitted_at', { ascending: false })
@@ -78,7 +78,7 @@ export const useDataStore = defineStore('data', () => {
         // Map profile email to student_name for UI compatibility
         submissions.value = (data || []).map((s: any) => ({
             ...s,
-            student_name: s.profiles?.email
+            student_name: s.users?.email
         }))
     }
 

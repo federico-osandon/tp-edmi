@@ -7,6 +7,9 @@ export default defineNuxtConfig({
     redirect: false
   },
   css: ['~/assets/css/main.css'],
+  build: {
+    transpile: ['@supabase/supabase-js']
+  },
   vite: {
     plugins: [
       require('@tailwindcss/vite').default(),

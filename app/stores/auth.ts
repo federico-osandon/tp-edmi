@@ -6,52 +6,98 @@ export const useAuthStore = defineStore('auth', () => {
     const supabase = useSupabaseClient<Database>()
     const router = useRouter()
 
-    // Custom user state to include role from profiles table
+    // Custom user state to include role from users table
     const userProfile = ref<any>(null)
+    const isLoadingProfile = ref(false)
 
-    const fetchProfile = async () => {
-        if (!user.value) {
+    const fetchProfile = async (userId?: string) => {
+        const id = userId || user.value?.id
+        
+        if (!id) {
+            console.log('⚠️ No user ID available yet')
             userProfile.value = null
             return
         }
-        const { data } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.value.id)
-            .single()
+        
+        if (isLoadingProfile.value) {
+            console.log('⏳ Already loading profile, skipping...')
+            return
+        }
 
-        userProfile.value = data
+        isLoadingProfile.value = true
+        console.log('🔍 Fetching profile for user:', id)
+        
+        try {
+            console.log('⏰ Starting query...')
+            const { data, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('user_id', id)
+                .single()
+
+            console.log('⏰ Query completed')
+            console.log('📦 Profile data:', data)
+            console.log('❌ Profile error:', error)
+            
+            if (data) {
+                userProfile.value = data
+                console.log('✅ Profile loaded successfully:', data.role)
+            } else {
+                console.log('⚠️ No profile data returned')
+            }
+        } catch (err) {
+            console.error('💥 Exception in fetchProfile:', err)
+        } finally {
+            isLoadingProfile.value = false
+            console.log('🏁 fetchProfile finished')
+        }
     }
 
     // Watch for auth changes to fetch profile
-    watch(user, async (newUser) => {
-        if (newUser) {
+    watch(user, async (newUser, oldUser) => {
+        console.log('👤 User changed from:', oldUser?.id, 'to:', newUser?.id)
+        if (newUser?.id && newUser.id !== oldUser?.id) {
             await fetchProfile()
-        } else {
+        } else if (!newUser) {
             userProfile.value = null
         }
-    }, { immediate: true })
+    })
 
-    const signUp = async ({ email, password, role }: any) => {
-        // Removed metadata options to avoid triggering potential legacy triggers
+    // Cargar perfil al inicializar si ya hay usuario
+    if (process.client && user.value?.id) {
+        fetchProfile()
+    }
+
+    const signUp = async ({ email, password, first_name, last_name }: any) => {
+        // 1. Registrar en Supabase Auth (guardamos nombre completo en metadata)
         const { data, error } = await supabase.auth.signUp({
-            email,
-            password
+            email: email.trim(),
+            password,
+            options: {
+                data: {
+                    full_name: `${first_name} ${last_name}`.trim()
+                }
+            }
         })
         if (error) throw error
 
-        // Manually insert or update profiles (upsert) to handle cases where a trigger might have already created the row
+        // 2. Guardar en tabla profiles (nombres separados)
         if (data.user && data.user.email) {
             const { error: profileError } = await supabase.from('profiles').upsert({
                 id: data.user.id,
                 email: data.user.email,
-                role: role as 'student' | 'instructor'
+                first_name,
+                last_name,
+                role: 'student' // Por defecto
             }, { onConflict: 'id' })
 
             if (profileError) {
                 console.error('Error updating profile:', profileError)
             }
         }
+
+        // Ya no necesitamos insertar manualmente en 'users' porque el Trigger lo hace automáticamente.
+        // Esto evita el error de RLS cuando el usuario aún no ha confirmado su email.
 
         router.push('/')
     }
@@ -77,6 +123,7 @@ export const useAuthStore = defineStore('auth', () => {
     return {
         user,
         userProfile,
+        fetchProfile,
         signUp,
         signIn,
         signOut,

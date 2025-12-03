@@ -3,16 +3,19 @@ import { BookOpen, Plus, ArrowRight } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const isLoading = ref(true)
 
 onMounted(() => {
   if (!authStore.isAuthenticated) {
     router.push('/login')
+    return
   }
+  isLoading.value = false
 })
 </script>
 
 <template>
-  <div v-if="authStore.isAuthenticated">
+  <div v-if="!isLoading && authStore.isAuthenticated">
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
       <p class="mt-2 text-gray-600">Welcome back, {{ authStore.user?.email }}</p>
